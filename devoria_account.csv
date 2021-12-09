@@ -1,5 +1,6 @@
-"Table","Create Table"
-"account","CREATE TABLE `account` (
+-- devoria_article_service.account definition
+
+CREATE TABLE `account` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `email` varchar(50) NOT NULL,
   `password` text NOT NULL,
@@ -8,4 +9,4 @@
   `createdAt` datetime(3) NOT NULL,
   `lastModified` datetime(3) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4"
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
