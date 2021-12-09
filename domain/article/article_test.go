@@ -43,26 +43,6 @@ func TestCreateArticle(t *testing.T) {
 	}
 }
 
-func TestCreateArticle(t *testing.T) {
-	setup()
-	data := url.Values{}
-	data.Set("title", "artikel memasak")
-	data.Set("subtitle", "memasak dirumah membuat anda lebih sehat")
-	data.Set("content", "memasak dirumah jauh lebih sehat untuk kesehatan anda. Karena anda dapat meracik sendiri sesuai kebutuhan anda terhadap makanan yang anda makan.")
-	data.Set("author", "2")
-	//Testing get of non existent question type
-	req, err = http.NewRequest("POST", "/v1/article/create", strings.NewReader(data.Encode()))
-	if err != nil {
-		t.Fatal("Creating 'POST /v1/article/create' request failed!")
-	}
-
-	m.ServeHTTP(respRec, req)
-
-	if respRec.Code != http.StatusNotFound {
-		t.Fatal("Server error: Returned ", respRec.Code, " instead of ", http.StatusNotFound)
-	}
-}
-
 func TestGetArticleByID(t *testing.T) {
 	setup()
 	//Testing get of non existent question type
