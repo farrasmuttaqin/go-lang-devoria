@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/sangianpatrick/devoria-article-service/crypto"
@@ -18,7 +20,7 @@ import (
 type AccountUsecase interface {
 	Register(ctx context.Context, params AccountRegistrationRequest) (resp response.Response)
 	Login(ctx context.Context, params AccountAuthenticationRequest) (resp response.Response)
-	GetProfile(ctx context.Context) (resp response.Response)
+	GetProfile(ctx context.Context, r *http.Request) (resp response.Response)
 }
 
 type accountUsecaseImpl struct {
@@ -118,16 +120,17 @@ func (u *accountUsecaseImpl) Register(ctx context.Context, params AccountRegistr
 
 func (u *accountUsecaseImpl) Login(ctx context.Context, params AccountAuthenticationRequest) (resp response.Response) {
 	account, err := u.repository.FindByEmail(ctx, params.Email)
+
 	if err != nil {
 		if err == exception.ErrNotFound {
-			return response.Error(response.StatusInvalidPayload, nil, exception.ErrBadRequest)
+			return response.Error(response.StatusNotFound, nil, exception.ErrBadRequest)
 		}
 		return response.Error(response.StatusUnexpectedError, nil, exception.ErrInternalServer)
 	}
 
 	encryptedPassword := u.crypto.Encrypt(params.Password, u.globalIV)
 	if encryptedPassword != *account.Password {
-		return response.Error(response.StatusInvalidPayload, nil, exception.ErrBadRequest)
+		return response.Error(response.StatusNotFound, nil, exception.ErrBadRequest)
 	}
 
 	claims := AccountStandardJWTClaims{}
@@ -137,7 +140,7 @@ func (u *accountUsecaseImpl) Login(ctx context.Context, params AccountAuthentica
 	claims.ExpiresAt = time.Now().Add(time.Hour * 24 * 1).Unix()
 
 	token, err := u.jsonWebToken.Sign(ctx, claims)
-	if err == nil {
+	if err != nil {
 		return response.Error(response.StatusUnexpectedError, nil, exception.ErrInternalServer)
 	}
 
@@ -148,7 +151,7 @@ func (u *accountUsecaseImpl) Login(ctx context.Context, params AccountAuthentica
 		return response.Error(response.StatusUnexpectedError, nil, exception.ErrInternalServer)
 	}
 
-	// publish to kafke if availabe
+	// publish to kafke if available
 
 	account.Password = nil
 
@@ -158,11 +161,35 @@ func (u *accountUsecaseImpl) Login(ctx context.Context, params AccountAuthentica
 
 	return response.Success(response.StatusOK, accountAuthenticationResponse)
 }
-func (u *accountUsecaseImpl) GetProfile(ctx context.Context) (resp response.Response) {
-	account, ok := ctx.Value(AccountContextKey{}).(Account)
-	if !ok {
-		return response.Error(response.StatusUnauthorized, nil, exception.ErrUnauthorized)
+
+func (u *accountUsecaseImpl) GetProfile(ctx context.Context, r *http.Request) (resp response.Response) {
+
+	keys, ok := r.URL.Query()["id"]
+
+	if !ok || len(keys[0]) < 1 {
+		return response.Error("Url Param 'id' is missing", nil, exception.ErrNotFound)
 	}
+
+	id := keys[0]
+
+	//convert id from string to integer
+	accountID, err := strconv.ParseInt(id, 0, 8)
+	if err != nil {
+		return response.Error("id must be integer", nil, exception.ErrDataType)
+	}
+
+	account, err := u.repository.FindByID(ctx, accountID)
+
+	if err != nil {
+		if err == exception.ErrNotFound {
+			return response.Error(response.StatusNotFound, nil, exception.ErrBadRequest)
+		}
+		return response.Error(response.StatusUnexpectedError, nil, exception.ErrInternalServer)
+	}
+
+	account.Password = nil
+	accountProfileResponse := AccountProfileResponse{}
+	accountProfileResponse.Profile = account
 
 	return response.Success(response.StatusOK, account)
 }

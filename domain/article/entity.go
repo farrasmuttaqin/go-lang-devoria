@@ -2,15 +2,13 @@ package article
 
 import (
 	"time"
-
-	"github.com/sangianpatrick/devoria-article-service/domain/account"
 )
 
 // ArticleStatus is a type of article current status.
 type ArticleStatus string
 
 const (
-	ArticleStatusDraft     ArticleStatus = "DRAFT"
+	ArticleStatusArchive   ArticleStatus = "DRAFT"
 	ArticleStatusPublished ArticleStatus = "PUBLISHED"
 )
 
@@ -24,5 +22,5 @@ type Article struct {
 	CreatedAt      time.Time
 	PublishedAt    *time.Time
 	LastModifiedAt *time.Time
-	Author         account.Account
+	Author         int64
 }
