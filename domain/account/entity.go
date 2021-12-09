@@ -8,7 +8,9 @@ import (
 
 const AccountSessionKeyFormat = "account:session:%s"
 
-type AccountContextKey struct{}
+type AccountContextKey struct {
+	ID int64 `json:"id"`
+}
 
 // Account is a collection of proprty of account.
 type Account struct {
